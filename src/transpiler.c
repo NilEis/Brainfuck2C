@@ -6,21 +6,18 @@
 
 #define MAX_LOOP 50
 
-typedef int cell_t;
-
-static cell_t cells[30000] = {0};
-
-static const size_t cells_size = sizeof(cells);
-
-static cell_t *ptr = cells;
-
-static const cell_t *ptr_start = cells;
-
-static const cell_t *ptr_end = cells + (cells_size / sizeof(cell_t));
-
-static char *bracket_start[MAX_LOOP];
-
-static int bracket_index = -1;
+enum token
+{
+    ADD,
+    SUB,
+    LEFT,
+    RIGHT,
+    IN,
+    OUT,
+    WH,
+    LE,
+    NIL
+};
 
 char *sourcecode_start = NULL;
 char *sourcecode = NULL;
@@ -86,41 +83,89 @@ char *transpiler_init(const char *source_str)
 int transpiler_run(void)
 {
     char ch;
-    FILE *f = fopen("output.c","w");
-    char last_token = 0;
+    FILE *f = fopen("output.c", "w");
+    fprintf(f, "\
+    #include<stdio.h>\n\
+    int arr[30000] = {0};\n\
+    typedef int cell_t;\n\
+    static cell_t cells[30000] = {0};\n\
+    static cell_t *ptr = cells;\n\
+    \nint main(void)\n{\n\
+    ");
+    int last_token = -1;
+    int current_token = NIL;
+    int i = 0;
     while ((ch = *sourcecode) != '\0')
     {
-        //printf("Line: %lli - ptr: %d - code: %c - Brackets: %d\n", sourcecode - sourcecode_start, *ptr, ch, bracket_index);
         switch (ch)
         {
         case '<':
-                "ptr++";
+            current_token = RIGHT;
             break;
         case '>':
-                "ptr--";
+            current_token = LEFT;
             break;
         case '+':
-            "(*ptr)++";
+            current_token = ADD;
             break;
         case '-':
-            "(*ptr)--";
+            current_token = SUB;
             break;
         case '.':
-            "putchar(*ptr)";
+            current_token = OUT;
             break;
         case ',':
-            "*ptr = (cell_t)getchar()";
+            current_token = IN;
             break;
         case '[':
-            
+            current_token = WH;
+            break;
         case ']':
-            
+            current_token = LE;
             break;
         default:
             break;
         }
+        i++;
+        if (last_token != -1 && last_token != current_token)
+        {
+            switch (last_token)
+            {
+            case RIGHT:
+                fprintf(f, "ptr += %d;\n", i - 1);
+                break;
+            case LEFT:
+                fprintf(f, "*ptr -= %d;\n", i - 1);
+                break;
+            case ADD:
+                fprintf(f, "*ptr += %d;\n", i - 1);
+                break;
+            case SUB:
+                fprintf(f, "*ptr -= %d;\n", i - 1);
+                break;
+            case OUT:
+                current_token = NIL;
+                fprintf(f, "putchar(*ptr);\n");
+                break;
+            case IN:
+                current_token = NIL;
+                fprintf(f, "*ptr = (cell_t)getchar();\n");
+                break;
+            case WH:
+                current_token = NIL;
+                fprintf(f, "while (*ptr)\n{\n");
+            case LE:
+                current_token = NIL;
+                fprintf(f, "}\n");
+                break;
+            }
+            i = 0;
+        }
+        last_token = current_token;
         sourcecode++;
     }
+    fprintf(f, "return 0;\n}");
+    fclose(f);
     return 0;
 }
 

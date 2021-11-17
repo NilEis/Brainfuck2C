@@ -14,8 +14,8 @@ enum token
     RIGHT,
     IN,
     OUT,
-    WH,
-    LE,
+    WHILE_START,
+    WHILE_END,
     NIL
 };
 
@@ -97,71 +97,81 @@ int transpiler_run(void)
     int i = 0;
     while ((ch = *sourcecode) != '\0')
     {
+        i++;
         switch (ch)
         {
         case '<':
             current_token = RIGHT;
+            printf("token: RIGHT\n");
             break;
         case '>':
             current_token = LEFT;
+            printf("token: LEFT\n");
             break;
         case '+':
             current_token = ADD;
+            printf("token: ADD\n");
             break;
         case '-':
             current_token = SUB;
+            printf("token: SUB\n");
             break;
         case '.':
             current_token = OUT;
+            printf("token: OUT\n");
             break;
         case ',':
             current_token = IN;
+            printf("token: IN\n");
             break;
         case '[':
-            current_token = WH;
+            current_token = WHILE_START;
+            printf("token: WHILE_START\n");
             break;
         case ']':
-            current_token = LE;
+            current_token = WHILE_END;
+            printf("token: WHILE_END\n");
             break;
         default:
             break;
         }
-        i++;
-        if (last_token != -1 && last_token != current_token)
+        if ((last_token == NIL || current_token == last_token) && (current_token != IN || current_token != OUT || current_token != WHILE_START || current_token != WHILE_END))
         {
-            switch (last_token)
+            i++;
+            last_token = current_token;
+        }
+        else
+        {
+            switch (current_token)
             {
             case RIGHT:
-                fprintf(f, "ptr += %d;\n", i - 1);
+                fprintf(f, "ptr += %d;\n", i);
                 break;
             case LEFT:
-                fprintf(f, "*ptr -= %d;\n", i - 1);
+                fprintf(f, "*ptr -= %d;\n", i);
                 break;
             case ADD:
-                fprintf(f, "*ptr += %d;\n", i - 1);
+                fprintf(f, "*ptr += %d;\n", i);
                 break;
             case SUB:
-                fprintf(f, "*ptr -= %d;\n", i - 1);
+                fprintf(f, "*ptr -= %d;\n", i);
                 break;
             case OUT:
-                current_token = NIL;
                 fprintf(f, "putchar(*ptr);\n");
                 break;
             case IN:
-                current_token = NIL;
                 fprintf(f, "*ptr = (cell_t)getchar();\n");
                 break;
-            case WH:
-                current_token = NIL;
+            case WHILE_START:
                 fprintf(f, "while (*ptr)\n{\n");
-            case LE:
-                current_token = NIL;
+            case WHILE_END:
                 fprintf(f, "}\n");
                 break;
             }
             i = 0;
+            last_token = NIL;
+            current_token = NIL;
         }
-        last_token = current_token;
         sourcecode++;
     }
     fprintf(f, "return 0;\n}");

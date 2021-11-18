@@ -1,7 +1,7 @@
 #include "include/linked_list.h"
 #include <stdio.h>
 #include <stdlib.h>
-
+/*
 static node_t*head = NULL;
 static node_t*current = NULL;
 static node_t*tail = NULL;
@@ -28,4 +28,4 @@ int list_next()
 
 node_t*list_get_current()
 {
-}
+}*/

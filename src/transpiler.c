@@ -24,6 +24,10 @@ char *sourcecode = NULL;
 
 static void interpreter_cleanup(void);
 
+static void print_token(int t, int i, FILE *f);
+
+static int get_token(char ch);
+
 char *transpiler_init(const char *source_str)
 {
     char ch;
@@ -92,87 +96,18 @@ int transpiler_run(void)
     static cell_t *ptr = cells;\n\
     \nint main(void)\n{\n\
     ");
-    int last_token = -1;
     int current_token = NIL;
     int i = 0;
     while ((ch = *sourcecode) != '\0')
     {
-        i++;
-        switch (ch)
-        {
-        case '<':
-            current_token = RIGHT;
-            printf("token: RIGHT\n");
-            break;
-        case '>':
-            current_token = LEFT;
-            printf("token: LEFT\n");
-            break;
-        case '+':
-            current_token = ADD;
-            printf("token: ADD\n");
-            break;
-        case '-':
-            current_token = SUB;
-            printf("token: SUB\n");
-            break;
-        case '.':
-            current_token = OUT;
-            printf("token: OUT\n");
-            break;
-        case ',':
-            current_token = IN;
-            printf("token: IN\n");
-            break;
-        case '[':
-            current_token = WHILE_START;
-            printf("token: WHILE_START\n");
-            break;
-        case ']':
-            current_token = WHILE_END;
-            printf("token: WHILE_END\n");
-            break;
-        default:
-            break;
-        }
-        if ((last_token == NIL || current_token == last_token) && (current_token != IN || current_token != OUT || current_token != WHILE_START || current_token != WHILE_END))
+        current_token = get_token(ch);
+        i = 1;
+        while (*(sourcecode + i) != '\0' && get_token(*(sourcecode + i)) == current_token)
         {
             i++;
-            last_token = current_token;
         }
-        else
-        {
-            switch (current_token)
-            {
-            case RIGHT:
-                fprintf(f, "ptr += %d;\n", i);
-                break;
-            case LEFT:
-                fprintf(f, "*ptr -= %d;\n", i);
-                break;
-            case ADD:
-                fprintf(f, "*ptr += %d;\n", i);
-                break;
-            case SUB:
-                fprintf(f, "*ptr -= %d;\n", i);
-                break;
-            case OUT:
-                fprintf(f, "putchar(*ptr);\n");
-                break;
-            case IN:
-                fprintf(f, "*ptr = (cell_t)getchar();\n");
-                break;
-            case WHILE_START:
-                fprintf(f, "while (*ptr)\n{\n");
-            case WHILE_END:
-                fprintf(f, "}\n");
-                break;
-            }
-            i = 0;
-            last_token = NIL;
-            current_token = NIL;
-        }
-        sourcecode++;
+        print_token(current_token, i, f);
+        sourcecode = sourcecode + i;
     }
     fprintf(f, "return 0;\n}");
     fclose(f);
@@ -185,5 +120,85 @@ static void interpreter_cleanup(void)
     {
         free(sourcecode_start);
         sourcecode_start = NULL;
+    }
+}
+
+static void print_token(int t, int i, FILE *f)
+{
+    switch (t)
+    {
+    case RIGHT:
+        fprintf(f, "ptr += %d;\n", i);
+        break;
+    case LEFT:
+        fprintf(f, "ptr -= %d;\n", i);
+        break;
+    case ADD:
+        fprintf(f, "*ptr += %d;\n", i);
+        break;
+    case SUB:
+        fprintf(f, "*ptr -= %d;\n", i);
+        break;
+    case OUT:
+        while (i>0)
+        {
+            i--;
+            fprintf(f, "putchar(*ptr);\n");
+        }
+        break;
+    case IN:
+        while (i>0)
+        {
+            i--;
+            fprintf(f, "*ptr = (cell_t)getchar();\n");
+        }
+        break;
+    case WHILE_START:
+        while (i>0)
+        {
+            i--;
+            fprintf(f, "while (*ptr)\n{\n");
+        }
+    case WHILE_END:
+        while (i>0)
+        {
+            i--;
+            fprintf(f, "}\n");
+        }
+        break;
+    }
+}
+
+static int get_token(char ch)
+{
+    switch (ch)
+    {
+    case '<':
+        return RIGHT;
+        break;
+    case '>':
+        return LEFT;
+        break;
+    case '+':
+        return ADD;
+        break;
+    case '-':
+        return SUB;
+        break;
+    case '.':
+        return OUT;
+        break;
+    case ',':
+        return IN;
+        break;
+    case '[':
+        return WHILE_START;
+        break;
+    case ']':
+        return WHILE_END;
+        break;
+    default:
+        return NIL;
+        break;
     }
 }

@@ -140,27 +140,27 @@ static void print_token(int t, int i, FILE *f)
         fprintf(f, "*ptr -= %d;\n", i);
         break;
     case OUT:
-        while (i>0)
+        while (i > 0)
         {
             i--;
             fprintf(f, "putchar(*ptr);\n");
         }
         break;
     case IN:
-        while (i>0)
+        while (i > 0)
         {
             i--;
             fprintf(f, "*ptr = (cell_t)getchar();\n");
         }
         break;
     case WHILE_START:
-        while (i>0)
+        while (i > 0)
         {
             i--;
             fprintf(f, "while (*ptr)\n{\n");
         }
     case WHILE_END:
-        while (i>0)
+        while (i > 0)
         {
             i--;
             fprintf(f, "}\n");
@@ -174,10 +174,10 @@ static int get_token(char ch)
     switch (ch)
     {
     case '<':
-        return RIGHT;
+        return LEFT;
         break;
     case '>':
-        return LEFT;
+        return RIGHT;
         break;
     case '+':
         return ADD;

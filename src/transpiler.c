@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_LOOP 50
 
@@ -19,8 +20,10 @@ enum token
     NIL
 };
 
-char *sourcecode_start = NULL;
-char *sourcecode = NULL;
+static char *sourcecode_start = NULL;
+static char *sourcecode = NULL;
+
+static char *output_name = NULL;
 
 static void interpreter_cleanup(void);
 
@@ -33,11 +36,23 @@ char *transpiler_init(const char *source_str)
     char ch;
     int size = 0;
     atexit(interpreter_cleanup);
+    for (int i = 0; source_str[i] != '\0'; i++)
+    {
+        if (source_str[i] == '.')
+        {
+            break;
+        }
+        size++;
+    }
+    output_name = calloc(size + 3, sizeof(char));
+    memcpy(output_name, source_str, size);
+    sprintf(output_name, "%s.c", output_name);
     FILE *source = fopen(source_str, "r");
     if (source == NULL)
     {
         return NULL;
     }
+    size = 0;
     while ((ch = getc(source)) != EOF)
     {
         switch (ch)
@@ -87,15 +102,15 @@ char *transpiler_init(const char *source_str)
 int transpiler_run(void)
 {
     char ch;
-    FILE *f = fopen("output.c", "w");
+    FILE *f = fopen(output_name, "w");
     fprintf(f, "\
-    #include<stdio.h>\n\
-    int arr[30000] = {0};\n\
-    typedef int cell_t;\n\
-    static cell_t cells[30000] = {0};\n\
-    static cell_t *ptr = cells;\n\
-    \nint main(void)\n{\n\
-    ");
+#include<stdio.h>\n\
+int arr[30000] = {0};\n\
+typedef int cell_t;\n\
+static cell_t cells[30000] = {0};\n\
+static cell_t *ptr = cells;\n\
+\nint main(void)\n{\n\
+");
     int current_token = NIL;
     int i = 0;
     while ((ch = *sourcecode) != '\0')
@@ -120,6 +135,11 @@ static void interpreter_cleanup(void)
     {
         free(sourcecode_start);
         sourcecode_start = NULL;
+    }
+    if (output_name != NULL)
+    {
+        free(output_name);
+        output_name = NULL;
     }
 }
 
